@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Leaflet Map with Random Coordinates</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""/>
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+    <style>
+        #map {
+            height: 750px; /* Set the height for the map */
+            width: 100%;
+        }
+        .marker-info {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="markers"></div>
+    <script>
+        // Initialize the map with default US coordinates
+        var map = L.map('map').setView([37.8, -96], 4);
+        // Load and display tile layer
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        // Function to generate random coordinates
+        function getRandomInRange(from, to, fixed) {
+            return (Math.random() * (to - from) + from).toFixed(fixed) * 1;
+            // .toFixed() returns string, so ' * 1' is a trick to convert to number
+        }
+        // Generate 3 random coordinates
+        const coordinates = [];
+        for (let i = 0; i < 3; i++) {
+            const lat = getRandomInRange(30, 35, 3);
+            const lon = getRandomInRange(-100, -90, 3);
+            coordinates.push({ lat, lon });
+        }
+        // Function to add markers and get locality
+        coordinates.forEach((coord, index) => {
+            const latitude = coord.lat;
+            const longitude = coord.lon;
+            const marker = L.marker([latitude, longitude]).addTo(map);
+            marker.bindPopup(`Marker ${index + 1}`);
+            // API call to get locality
+            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+                .then(response => response.json())
+                .then(data => {
+                    const locality = data.locality || "Locality not found";
+                    const markerInfo = document.createElement('div');
+                    markerInfo.className = 'marker-info';
+                    markerInfo.innerHTML = `Marker ${index + 1}: Latitude: [${latitude}, Longitude: ${longitude}<br>Locality: ${locality}`;
+                    document.getElementById('markers').appendChild(markerInfo);
+                })
+                .catch(error => console.error('Error fetching locality:', error));
+        });
+    </script>
+</body>
+</html>
